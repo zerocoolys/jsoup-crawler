@@ -1,5 +1,6 @@
 package com.crawler.root;
 
+import org.apache.commons.cli.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,16 +12,30 @@ import java.io.IOException;
  * Created by wyyousheng on 13-12-11.
  */
 public class Crawler {
+
+    private static Options options = new Options();
+
+    static {
+        Option url = new Option("u", true, "url for target");
+        url.setRequired(true);
+        options.addOption(url);
+
+        options.addOption(new Option("d", true, "the depth"));
+    }
+
     public static void main(String[] args) {
         // TODO 参数设置
 
-        if (!checkParam(args)) {
+        CommandLine cmd = checkParam(args);
+
+        if (cmd == null) {
             return;
         }
 
-        String url = args[0];
+        String url = cmd.getOptionValue("u");
         crawl(url);
     }
+
 
     private static void crawl(String root) {
         try {
@@ -43,7 +58,16 @@ public class Crawler {
 
     }
 
-    private static boolean checkParam(String[] args) {
-        return true;
+    private static CommandLine checkParam(String[] args) {
+        CommandLineParser parser = new BasicParser();
+        try {
+            CommandLine cmd = parser.parse(options, args);
+            return cmd;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("main",options);
+        }
+        return null;
     }
 }
