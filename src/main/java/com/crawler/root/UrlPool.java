@@ -1,5 +1,8 @@
 package com.crawler.root;
 
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -21,15 +24,22 @@ public class UrlPool {
     }
 
     public static String pollUrl() {
-        try {
-            String url = urlpool.poll(500, TimeUnit.MILLISECONDS);
-            System.out.println("---- " + url);
+        String url = urlpool.poll();
+        System.out.println("---- " + url);
 
-            return url;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return url;
     }
 
+    public static void pushLinks(String root, Elements elements) {
+        for (Element element : elements) {
+            if (element.attributes().hasKey("href")) {
+                String link = element.attributes().get("href");
+                if (!link.startsWith("http://")) {
+                    link = root + link;
+                }
+                UrlPool.putUrl(link);
+            }
+        }
+
+    }
 }

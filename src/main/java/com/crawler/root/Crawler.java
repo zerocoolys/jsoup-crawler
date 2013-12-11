@@ -1,5 +1,6 @@
 package com.crawler.root;
 
+import com.crawler.worker.WorkerPool;
 import org.apache.commons.cli.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -33,7 +34,12 @@ public class Crawler {
         }
 
         String url = cmd.getOptionValue("u");
+
+        WorkerPool wp = new WorkerPool();
+        wp.start(url);
+
         crawl(url);
+
     }
 
 
@@ -42,16 +48,7 @@ public class Crawler {
             Document dom = Jsoup.connect(root).get();
             Elements elements = dom.select("a");
 
-            for (Element element : elements) {
-                if (element.attributes().hasKey("href")) {
-                    String link = element.attributes().get("href");
-                    if (!link.startsWith("http://")) {
-                        link = root + link;
-                    }
-                    UrlPool.putUrl(link);
-                }
-            }
-
+            UrlPool.pushLinks(root, elements);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -66,7 +63,7 @@ public class Crawler {
         } catch (ParseException e) {
             e.printStackTrace();
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("main",options);
+            formatter.printHelp("main", options);
         }
         return null;
     }
