@@ -2,7 +2,6 @@ package com.crawler.root;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by wyyousheng on 13-12-11.
@@ -22,7 +21,7 @@ public class UrlPool {
 
     public static String pollUrl() {
         try {
-            String url = urlpool.poll(500, TimeUnit.MILLISECONDS);
+            String url = urlpool.take();
             System.out.println("---- " + url);
 
             return url;

@@ -66,7 +66,7 @@ public class Crawler {
         } catch (ParseException e) {
             e.printStackTrace();
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("main",options);
+            formatter.printHelp("main", options);
         }
         return null;
     }
