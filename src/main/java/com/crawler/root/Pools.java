@@ -1,5 +1,6 @@
 package com.crawler.root;
 
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
@@ -13,6 +14,30 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Pools {
 
     private static BlockingQueue<String> urlpool = new LinkedBlockingQueue<String>(5000);
+
+    private static BlockingQueue<Document> docpool = new LinkedBlockingQueue<Document>(500);
+
+    public static void putDoc(Document doc) {
+        try {
+            System.out.println("++++ doc " + doc.location());
+            docpool.put(doc);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Document pollDoc() {
+        try {
+            Document doc = docpool.take();
+            System.out.println("---- doc " + doc.location());
+
+            return doc;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     public static void putUrl(HashSet<String> urls) {
         try {

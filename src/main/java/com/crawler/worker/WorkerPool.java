@@ -1,16 +1,13 @@
 package com.crawler.worker;
 
-import com.crawler.root.UrlPool;
+import com.crawler.root.Pools;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Created by wyyousheng on 13-12-11.
@@ -37,38 +34,72 @@ public class WorkerPool {
         @Override
         public void run() {
             while (true) {
-                String url = UrlPool.pollUrl();
-                if (url == null) {
-                    try {
-                        Thread.sleep(500);
-                        continue;
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                String url = Pools.pollUrl();
 
                 try {
                     Document doc = Jsoup.connect(url).get();
-                    Elements links = doc.select("a");
-
-                    UrlPool.pushLinks(root, links);
+                    Pools.putDoc(doc);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.err.println("eeee " + url);
                 }
 
             }
         }
     }
 
+    class DocWorker implements Runnable {
+
+        private String root;
+
+
+        public DocWorker(String root) {
+            this.root = root;
+        }
+
+        @Override
+        public void run() {
+
+            while (true) {
+                Document doc = Pools.pollDoc();
+
+                if(doc.location().startsWith("http://item")){
+                    processDoc(doc);
+                }
+                Elements links = doc.select("a");
+                Pools.pushLinks(root, links);
+            }
+
+        }
+
+        private void processDoc(Document doc) {
+            Element summaryele = doc.getElementById("summary");
+
+        }
+    }
+
+
+    private final int POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
 
     public void start(String root) {
 
-        Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+        ThreadPoolExecutor linkExecutors = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 0L, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>());
+
+        linkExecutors.prestartAllCoreThreads();
 
         for (int i = 0; i < 4; i++) {
-            executor.execute(new Work(root));
+            linkExecutors.execute(new Work(root));
         }
 
-        mapholder.putIfAbsent(root, executor);
+        ThreadPoolExecutor docExecutors = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 0L, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>());
+
+        docExecutors.prestartAllCoreThreads();
+
+        for (int i = 0; i < 4; i++) {
+            docExecutors.execute(new Work(root));
+        }
+
+
+        mapholder.putIfAbsent(root, linkExecutors);
     }
 }

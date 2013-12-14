@@ -4,7 +4,6 @@ import com.crawler.worker.WorkerPool;
 import org.apache.commons.cli.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
@@ -33,12 +32,17 @@ public class Crawler {
             return;
         }
 
-        String url = cmd.getOptionValue("u");
+        final String url = cmd.getOptionValue("u");
 
         WorkerPool wp = new WorkerPool();
         wp.start(url);
 
-        crawl(url);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                crawl(url);
+            }
+        }).start();
 
     }
 
@@ -48,7 +52,7 @@ public class Crawler {
             Document dom = Jsoup.connect(root).get();
             Elements elements = dom.select("a");
 
-            UrlPool.pushLinks(root, elements);
+            Pools.pushLinks(root, elements);
         } catch (IOException e) {
             e.printStackTrace();
         }
