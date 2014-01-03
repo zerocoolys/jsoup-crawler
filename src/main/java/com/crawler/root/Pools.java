@@ -63,7 +63,7 @@ public class Pools {
     }
 
     public static void pushLinks(String root, Elements elements) {
-        HashSet<String> links = new HashSet<>(elements.size());
+        HashSet<String> links = new HashSet<String>(elements.size());
         for (Element element : elements) {
             if (element.attributes().hasKey("href")) {
                 String link = element.attributes().get("href");
@@ -74,9 +74,7 @@ public class Pools {
             }
         }
 
-
         Pools.putUrl(links);
-
 
     }
 }

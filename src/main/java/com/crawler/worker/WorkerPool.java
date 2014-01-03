@@ -1,105 +1,117 @@
 package com.crawler.worker;
 
-import com.crawler.root.Pools;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.elasticsearch.common.settings.Settings;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
-import java.util.concurrent.*;
+import com.crawler.main.conf.Configurations;
+import com.crawler.root.Pools;
 
 /**
  * Created by wyyousheng on 13-12-11.
  */
 public class WorkerPool {
 
-    private static ConcurrentHashMap<String, Executor> mapholder = new ConcurrentHashMap<String, Executor>();
+	private static ConcurrentHashMap<String, Executor> mapholder = new ConcurrentHashMap<String, Executor>();
 
-    class Work implements Runnable {
-        private String root;
+	private String url;
 
-        public String getRoot() {
-            return root;
-        }
+	private Settings settings;
 
-        public void setRoot(String root) {
-            this.root = root;
-        }
+	public WorkerPool(String url, Settings settings) {
+		this.url = url;
+		this.settings = settings;
+	}
 
-        public Work(String root) {
-            this.root = root;
-        }
+	class Work implements Runnable {
+		private String url;
 
-        @Override
-        public void run() {
-            while (true) {
-                String url = Pools.pollUrl();
+		public String getRoot() {
+			return url;
+		}
 
-                try {
-                    Document doc = Jsoup.connect(url).get();
-                    Pools.putDoc(doc);
-                } catch (IOException e) {
-                    System.err.println("eeee " + url);
-                }
+		public void setRoot(String root) {
+			this.url = root;
+		}
 
-            }
-        }
-    }
+		public Work(String url) {
+			this.url = url;
+		}
 
-    class DocWorker implements Runnable {
+		public void run() {
+			while (true) {
+				String url = Pools.pollUrl();
+				try {
+					Document doc = Jsoup.connect(url).get();
+					Pools.putDoc(doc);
+				} catch (IOException e) {
+					System.err.println("eeee " + url);
+				}
 
-        private String root;
+			}
+		}
+	}
 
+	class DocWorker implements Runnable {
 
-        public DocWorker(String root) {
-            this.root = root;
-        }
+		private String root;
 
-        @Override
-        public void run() {
+		public DocWorker(String root) {
+			this.root = root;
+		}
 
-            while (true) {
-                Document doc = Pools.pollDoc();
+		public void run() {
 
-                if(doc.location().startsWith("http://item")){
-                    processDoc(doc);
-                }
-                Elements links = doc.select("a");
-                Pools.pushLinks(root, links);
-            }
+			while (true) {
+				Document doc = Pools.pollDoc();
+				
+				Map<String,String> maps = settings.getAsMap();
+				
+				for(String fieldName : maps.keySet()){
+					
+				}
+				
+				Elements links = doc.select("a");
+				Pools.pushLinks(root, links);
+			}
 
-        }
+		}
 
-        private void processDoc(Document doc) {
-            Element summaryele = doc.getElementById("summary");
+	}
 
-        }
-    }
+	private final int POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
 
+	public void start() {
 
-    private final int POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
+		ThreadPoolExecutor linkExecutors = new ThreadPoolExecutor(POOL_SIZE,
+				POOL_SIZE, 0L, TimeUnit.MICROSECONDS,
+				new LinkedBlockingQueue<Runnable>());
 
-    public void start(String root) {
+		linkExecutors.prestartAllCoreThreads();
 
+		for (int i = 0; i < 4; i++) {
+			linkExecutors.execute(new Work(url));
+		}
 
-        ThreadPoolExecutor linkExecutors = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 0L, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>());
+		ThreadPoolExecutor docExecutors = new ThreadPoolExecutor(POOL_SIZE,
+				POOL_SIZE, 0L, TimeUnit.MICROSECONDS,
+				new LinkedBlockingQueue<Runnable>());
 
-        linkExecutors.prestartAllCoreThreads();
+		docExecutors.prestartAllCoreThreads();
 
-        for (int i = 0; i < 4; i++) {
-            linkExecutors.execute(new Work(root));
-        }
+		for (int i = 0; i < 4; i++) {
+			docExecutors.execute(new DocWorker(url));
+		}
 
-        ThreadPoolExecutor docExecutors = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 0L, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>());
-
-        docExecutors.prestartAllCoreThreads();
-
-        for (int i = 0; i < 4; i++) {
-            docExecutors.execute(new Work(root));
-        }
-
-
-        mapholder.putIfAbsent(root, linkExecutors);
-    }
+		mapholder.putIfAbsent(url, linkExecutors);
+	}
 }
