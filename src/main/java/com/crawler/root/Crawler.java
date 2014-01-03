@@ -1,6 +1,10 @@
 package com.crawler.root;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashSet;
 
 import org.apache.commons.cli.BasicParser;
@@ -12,12 +16,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.SettingsException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import com.crawler.main.conf.Configurations;
 import com.crawler.worker.WorkerPool;
 
 /**
@@ -37,15 +41,20 @@ public class Crawler {
 
 	public static void main(String[] args) {
 		// TODO 参数设置
-		Settings settings = ImmutableSettings.builder()
-				.loadFromSource("conf/url.yml").build();
-		CommandLine cmd = checkParam(args);
-
-		if (cmd == null) {
+		Settings settings = null;
+		try {
+			settings = ImmutableSettings.builder()
+					.loadFromUrl(new File("conf/url.yml").toURI().toURL())
+					.build();
+		} catch (SettingsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 			return;
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
 		}
 		// Object keyObj = Configurations.getInstance().get("key");
-		String keystr = settings.get("key");
+		String keystr = settings.get("site.list");
 		if (keystr == null)
 			return;
 
@@ -53,10 +62,10 @@ public class Crawler {
 
 		for (final String key : keys) {
 
-			final String url = settings.get("key." + key);
+			final String url = settings.get("site." + key);
 
 			final Settings localSettings = settings.getByPrefix(key);
-			WorkerPool wp = new WorkerPool(url, localSettings);
+			WorkerPool wp = new WorkerPool(key, url, localSettings);
 			wp.start();
 
 			new Thread(new Runnable() {
@@ -74,18 +83,8 @@ public class Crawler {
 			Document dom = Jsoup.connect(root).get();
 			Elements elements = dom.select("a");
 
-			HashSet<String> links = new HashSet<String>(elements.size());
-			for (Element element : elements) {
-				if (element.attributes().hasKey("href")) {
-					String link = element.attributes().get("href");
-					if (!link.startsWith("http://")) {
-						link = root + link;
-					}
-					links.add(link);
-				}
-			}
-			Pools.putUrl(links);
-			
+			Pools.pushLinks(root, elements);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

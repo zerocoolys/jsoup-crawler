@@ -1,21 +1,21 @@
-key: "amazon,6pm"
+site.list: amazon,6pm
 
-key.amazon: "http://www.amazon.com"
-amazon.brand://*[@id="brand"]
-amazon.title://*[@id="title"]
-amazon.price://*[@id="priceblock_ourprice"]
-amazon.reviews://*[@id="averageCustomerReviews"]/a
-amazon.picture://*[@id="landingImage"]
-amazon.asin://*[@id="detailBullets_feature_div"]/ul/li[1]/span/span[2]
-amazon.dim://*[@id="detailBullets_feature_div"]/ul/li[2]/span/span[2]
-amazon.shipping.weight://*[@id="detailBullets_feature_div"]/ul/li[3]/span/span[2]/text()[1]
-amazon.model.number://*[@id="detailBullets_feature_div"]/ul/li[5]/span/span[2]
+site.amazon: "http://www.amazon.com"
+amazon.brand: "//*[@id=\"brand\"]"
+amazon.title: "//*[@id=\"title\"]"
+amazon.price: "//*[@id=\"priceblock_ourprice\"]"
+amazon.reviews: "//*[@id=\"averageCustomerReviews\"]/a"
+amazon.picture: "//*[@id=\"landingImage\"]"
+amazon.asin: "//*[@id=\"detailBullets_feature_div\"]/ul/li[1]/span/span[2]"
+amazon.dim: "//*[@id=\"detailBullets_feature_div\"]/ul/li[2]/span/span[2]"
+amazon.shipping.weight: "//*[@id=\"detailBullets_feature_div\"]/ul/li[3]/span/span[2]/text()[1]"
+amazon.model.number: "//*[@id=\"detailBullets_feature_div\"]/ul/li[5]/span/span[2]"
 
 
-key.6pm:"http://www.6pm.com"
-6pm.brand://*[@id="productStage"]/h1/a[1]
-6pm.title://*[@id="productStage"]/h1/a[2]
-6pm.price://*[@id="priceSlot"]/div
-6pm.shipping://*[@id="shipOpts"]
-6pm.picture://*[@id="detailImage"]/img
+site.6pm: "http://www.6pm.com"
+6pm.brand: "//*[@id=\"productStage\"]/h1/a[1]"
+6pm.title: "//*[@id=\"productStage\"]/h1/a[2]"
+6pm.price: "//*[@id=\"priceSlot\"]/div"
+6pm.shipping: "//*[@id=\"shipOpts\"]"
+6pm.picture: "//*[@id=\"detailImage\"]/img"
 
